@@ -3,173 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>StreamPro Studio - Hybrid System</title>
+    <title>StreamPro Studio Hybrid</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Rajdhani:wght@700&display=swap" rel="stylesheet">
-    
     <style>
         :root {
-            --bg: #0f0f14; --card: #1a1a24; --accent: #00a8ff; --text: #ffffff;
+            --bg: #0f0f14; --card: #1a1a24; --accent: #00a8ff; 
+            --red: #ff3366; --green: #00ff88; --text: #ffffff;
         }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
         
-        /* DISEÑO PARA DESKTOP */
-        .desktop-only { display: grid; grid-template-columns: 250px 1fr 300px; height: 100vh; }
-        
-        /* DISEÑO PARA MÓVIL (CONTROL REMOTO) */
-        .mobile-only { display: none; padding: 20px; flex-direction: column; gap: 15px; height: 100vh; justify-content: center; }
-        
+        /* CONTENEDOR MÓVIL (CONTROL REMOTO) */
+        .remote-interface {
+            display: none;
+            padding: 20px;
+            height: 100vh;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .grid-control {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            flex-grow: 1;
+        }
+
+        .btn-remote {
+            background: var(--card);
+            border: 2px solid #2a2a3e;
+            border-radius: 18px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-remote i { font-size: 2rem; margin-bottom: 10px; }
+        .btn-remote:active { transform: scale(0.95); background: var(--bg); }
+        .btn-active { border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 168, 255, 0.4); }
+        .btn-danger { color: var(--red); }
+        .btn-success { color: var(--green); }
+
+        /* HEADER MÓVIL */
+        .remote-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #2a2a3e;
+        }
+
+        /* DISEÑO DESKTOP */
+        @media (min-width: 769px) {
+            .desktop-interface { display: block; padding: 40px; }
+            .remote-interface { display: none; }
+        }
+
+        /* DISEÑO MÓVIL */
         @media (max-width: 768px) {
-            .desktop-only { display: none; }
-            .mobile-only { display: flex; }
+            .desktop-interface { display: none; }
+            .remote-interface { display: flex; }
         }
 
-        .remote-btn {
-            padding: 25px; border-radius: 15px; border: none; background: var(--card); color: white;
-            font-size: 1.2rem; font-weight: 600; cursor: pointer; border: 2px solid #2a2a3e;
-            transition: 0.3s; display: flex; flex-direction: column; align-items: center; gap: 10px;
-        }
-        .remote-btn:active { transform: scale(0.95); background: var(--accent); }
-        .status-dot { width: 12px; height: 12px; background: #ff3366; border-radius: 50%; display: inline-block; }
-        .online { background: #00ff88; }
-
-        #preview-canvas { width: 100%; border-radius: 12px; background: #000; aspect-ratio: 16/9; }
-        .setup-box { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 15px; }
-        input { width: 100%; padding: 8px; margin-top: 5px; background: #0f0f14; border: 1px solid #2a2a3e; color: white; border-radius: 5px; }
+        #id-display { color: var(--accent); font-weight: bold; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
-    <div class="desktop-only">
-        <aside style="padding: 20px; border-right: 1px solid #2a2a3e;">
-            <h2 style="font-family: 'Rajdhani'; color: var(--accent);">STREAMPRO</h2>
-            <div class="setup-box">
-                <p>ID de Sesión (Comparte con Móvil):</p>
-                <code id="my-id" style="color: var(--accent); font-size: 1.2rem;">Conectando...</code>
-            </div>
-            <div id="sources-list">
-                <p>Fuentes Activas:</p>
-            </div>
-        </aside>
-
-        <main style="padding: 20px;">
-            <canvas id="preview-canvas"></canvas>
-            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button onclick="startLocalCamera()" class="remote-btn" style="padding: 10px; font-size: 0.9rem;">Cámara Local</button>
-                <button id="stream-btn" class="remote-btn" style="padding: 10px; font-size: 0.9rem; border-color: #ff3366;">🔴 EMITIR LIVE</button>
-            </div>
-        </main>
-
-        <aside style="padding: 20px; border-left: 1px solid #2a2a3e;">
-            <h3>CONFIGURACIÓN RTMP</h3>
-            <div class="setup-box">
-                <label>URL del Servidor</label>
-                <input type="text" placeholder="rtmp://a.rtmp.youtube.com/live2">
-                <label style="margin-top: 10px; display: block;">Clave de Transmisión</label>
-                <input type="password" placeholder="••••-••••-••••">
-            </div>
-        </aside>
-    </div>
-
-    <div class="mobile-only">
-        <h2 style="text-align: center; font-family: 'Rajdhani';">REMOTE CONTROL</h2>
-        <div id="connection-status" style="text-align: center; margin-bottom: 20px;">
-            <span class="status-dot"></span> <span id="status-text">Desconectado del Desktop</span>
+    <div class="desktop-interface">
+        <h1>🖥️ MODO STUDIO (Desktop)</h1>
+        <div style="background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #2a2a3e;">
+            <p>1. Abre esta URL en tu móvil.</p>
+            <p>2. Introduce este ID en el móvil:</p>
+            <div id="id-display">Conectando...</div>
         </div>
-        
-        <button class="remote-btn" onclick="connectToDesktop()">
-            <span>🔗</span> Vincular con Desktop
-        </button>
-        
-        <button class="remote-btn" onclick="startMobileCam()">
-            <span>🎥</span> Usar como Cámara Web
-        </button>
-
-        <button class="remote-btn" onclick="sendAction('mute')">
-            <span>🔇</span> Silenciar Micrófono
-        </button>
-
-        <button class="remote-btn" style="border-color: #ff3366;" onclick="sendAction('stream')">
-            <span>🔴</span> Iniciar Streaming
-        </button>
+        <canvas id="main-canvas" width="1280" height="720" style="width: 100%; max-width: 800px; background: #000; margin-top: 20px; border-radius: 8px;"></canvas>
     </div>
 
-    <video id="hidden-video" autoplay playsinline muted style="display:none;"></video>
+    <div class="remote-interface">
+        <div class="remote-header">
+            <h2 style="margin:0; color: var(--accent);">STREAMPRO REMOTE</h2>
+            <small id="status">Esperando conexión...</small>
+        </div>
+
+        <div class="grid-control">
+            <button class="btn-remote" onclick="toggleMobileCam()" id="cam-btn">
+                <span>📷</span>
+                CAM MOVIL
+            </button>
+
+            <button class="btn-remote btn-success" onclick="connectToDesktop()">
+                <span>🔗</span>
+                VINCULAR
+            </button>
+
+            <button class="btn-remote btn-danger" onclick="sendAction('stream')">
+                <span>🔴</span>
+                LIVE
+            </button>
+
+            <button class="btn-remote" onclick="sendAction('record')">
+                <span>⏺️</span>
+                GRABAR
+            </button>
+
+            <button class="btn-remote" onclick="sendAction('mute')">
+                <span>🔇</span>
+                MUTE
+            </button>
+
+            <button class="btn-remote" onclick="sendAction('switch')">
+                <span>🖼️</span>
+                ESCENA
+            </button>
+        </div>
+    </div>
+
+    <video id="v-hidden" autoplay playsinline muted style="display:none;"></video>
 
     <script>
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const peer = new Peer(); // Conexión al servidor de señalización gratuito
-        let conn; // Conexión de datos
-        let canvas = document.getElementById('preview-canvas');
-        let ctx = canvas.getContext('2d');
-        let videoElement = document.getElementById('hidden-video');
+        const peer = new Peer();
+        let conn;
+        let video = document.getElementById('v-hidden');
 
-        // --- LÓGICA DE CONEXIÓN ---
-        peer.on('open', (id) => {
-            if(!isMobile) document.getElementById('my-id').textContent = id;
+        // Al generar el ID de sesión
+        peer.on('open', id => {
+            const display = document.getElementById('id-display');
+            if(display) display.innerText = id;
         });
 
-        // DESKTOP: Recibe conexión de control
-        peer.on('connection', (c) => {
+        // DESKTOP: Escucha comandos y video
+        peer.on('connection', c => {
             conn = c;
-            showNotification("Móvil conectado como control remoto");
-            setupDataListener();
+            conn.on('data', data => handleCommand(data));
         });
 
-        // DESKTOP: Recibe stream de video del móvil
-        peer.on('call', (call) => {
-            call.answer(); // Responder llamada
-            call.on('stream', (remoteStream) => {
-                videoElement.srcObject = remoteStream;
-                videoElement.play();
-                renderToCanvas();
-            });
-        });
-
-        // MÓVIL: Conectar al PC
-        function connectToDesktop() {
-            const destId = prompt("Introduce el ID que aparece en tu Desktop:");
-            if(destId) {
-                conn = peer.connect(destId);
-                document.querySelector('.status-dot').classList.add('online');
-                document.getElementById('status-text').textContent = "Sincronizado";
-                setupDataListener();
-            }
-        }
-
-        // MÓVIL: Enviar Cámara al PC
-        async function startMobileCam() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: true });
-            const destId = conn.peer;
-            peer.call(destId, stream);
-            alert("Transmitiendo video al Desktop...");
-        }
-
-        // --- RENDERIZADO ---
-        function renderToCanvas() {
-            canvas.width = 1280; canvas.height = 720;
-            function loop() {
-                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                requestAnimationFrame(loop);
-            }
-            loop();
-        }
-
-        function sendAction(action) {
-            if(conn) conn.send({ type: 'command', value: action });
-        }
-
-        function setupDataListener() {
-            conn.on('data', (data) => {
-                if(data.type === 'command') {
-                    alert("Comando recibido en Desktop: " + data.value);
-                    // Aquí activas el stream o el mute en el PC
+        peer.on('call', call => {
+            call.answer();
+            call.on('stream', stream => {
+                video.srcObject = stream;
+                // Pintar en canvas
+                const canvas = document.getElementById('main-canvas');
+                const ctx = canvas.getContext('2d');
+                function draw() {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    requestAnimationFrame(draw);
                 }
+                draw();
             });
+        });
+
+        // MÓVIL: Funciones de botones
+        function connectToDesktop() {
+            const remoteId = prompt("Introduce el ID del Desktop:");
+            if(remoteId) {
+                conn = peer.connect(remoteId);
+                document.getElementById('status').innerText = "✅ CONECTADO AL DESKTOP";
+                document.getElementById('status').style.color = "var(--green)";
+            }
         }
 
-        function showNotification(msg) {
-            alert(msg); // Simplificado para el ejemplo
+        async function toggleMobileCam() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" }, 
+                    audio: true 
+                });
+                const call = peer.call(conn.peer, stream);
+                document.getElementById('cam-btn').classList.add('btn-active');
+            } catch (err) {
+                alert("Error de cámara: Asegúrate de estar en HTTPS");
+            }
+        }
+
+        function sendAction(cmd) {
+            if(conn) {
+                conn.send({ type: 'control', command: cmd });
+                console.log("Comando enviado:", cmd);
+            } else {
+                alert("Primero debes Vincular con el Desktop");
+            }
+        }
+
+        function handleCommand(data) {
+            if(data.type === 'control') {
+                alert("Desktop recibió comando: " + data.command);
+                // Aquí conectarías con tu lógica de streaming existente
+            }
         }
     </script>
 </body>
