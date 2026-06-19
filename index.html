@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>MuzzStudio Tracker Terminal</title>
+    <title>MuzzTracker Scan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="manifest" href="./manifest.json">
@@ -23,12 +23,25 @@
         .tx-row:hover { background: #161b22; }
     </style>
 </head>
-<body class="p-8">
+<body class="p-8 relative min-h-screen">
+    <div id="iosPrompt" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-sky-500/40 p-4 rounded-xl shadow-2xl z-50 max-w-sm w-11/12 animate-bounce">
+        <div class="flex justify-between items-start mb-2">
+            <h4 class="font-bold text-sky-400 text-sm">Instalar en iPhone</h4>
+            <button onclick="document.getElementById('iosPrompt').classList.add('hidden')" class="text-slate-500 hover:text-white text-xs">✕</button>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+            Toca el botón de **Compartir** abajo en Safari (el cuadro con la flecha <span class="text-sky-400">⎋</span>) y luego selecciona **"Agregar a inicio"**.
+        </p>
+    </div>
+
     <div class="max-w-7xl mx-auto">
         <header class="flex justify-between items-center border-b-2 border-slate-800 pb-6 mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-sky-400">MuzzStudio Terminal v1.0</h1>
-                <p class="text-slate-500">Monitoreo On-Chain en Tiempo Real</p>
+                <div class="flex items-center gap-4">
+                    <h1 class="text-3xl font-bold text-sky-400">MuzzTracker Scan</h1>
+                    <button id="pwaInstallBtn" class="hidden bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs font-bold px-3 py-1.5 rounded border border-sky-500/30 transition flex items-center gap-1"></button>
+                </div>
+                <p class="text-slate-500 mt-1">Monitoreo On-Chain en Tiempo Real</p>
             </div>
             <div class="text-right">
                 <div class="flex items-center text-emerald-400 font-bold">
@@ -78,15 +91,59 @@
         const txBody = document.getElementById('txBody');
         const walletFilter = document.getElementById('walletFilter');
         const filterStatus = document.getElementById('filterStatus');
+        const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+        const iosPrompt = document.getElementById('iosPrompt');
 
         let globalTransactions = [];
+        let deferredPrompt;
 
+        // --- SISTEMA DE INSTALACIÓN INTELIGENTE (ANDROID & IOS) ---
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+        // Configurar comportamiento inicial del botón
+        if (isIOS && !isStandalone) {
+            pwaInstallBtn.innerHTML = "⚙️ Install via Menu";
+            pwaInstallBtn.classList.remove('hidden');
+        }
+
+        // Capturador del instalador automático en Android
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!isIOS && !isStandalone) {
+                pwaInstallBtn.innerHTML = "📥 Install App";
+                pwaInstallBtn.classList.remove('hidden');
+            }
+        });
+
+        // Evento al presionar el botón al lado del título
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (isIOS) {
+                // Alternar el mensaje instructivo en iPhone
+                iosPrompt.classList.toggle('hidden');
+                return;
+            }
+            // Ejecutar instalador en Android
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                pwaInstallBtn.classList.add('hidden');
+            }
+            deferredPrompt = null;
+        });
+
+        // Ocultar botón por completo si ya está instalada y abierta como App
+        if (isStandalone) {
+            pwaInstallBtn.classList.add('hidden');
+        }
+
+        // --- FLUJO DE DATOS DEL WEBSOCKET ---
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            
             globalTransactions.unshift(data);
             if(globalTransactions.length > 100) globalTransactions.pop(); 
-
             renderFeed();
         };
 
