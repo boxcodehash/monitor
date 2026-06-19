@@ -52,15 +52,15 @@
                         </tr>
                     </thead>
                     <tbody id="txBody">
-                        </tbody>
+                    </tbody>
                 </table>
             </main>
         </div>
     </div>
 
     <script>
+        // URL corregida y segura para conectar con Render sin interferencias
         const ws = new WebSocket(`wss://monitor-ok0d.onrender.com/ws`);
-);
         const txBody = document.getElementById('txBody');
 
         ws.onmessage = (event) => {
