@@ -30,9 +30,9 @@
             <aside class="col-span-3 space-y-6">
                 <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-800 glow">
                     <h3 class="font-bold mb-4 border-l-4 border-sky-400 pl-2">Panel de Control</h3>
-                    <label class="text-xs text-slate-500 uppercase">Filtrar Wallet</label>
+                    <label class="text-xs text-slate-500 uppercase">Filtrar Wallet (Opcional)</label>
                     <input type="text" id="walletFilter" placeholder="0x..." class="w-full bg-black border border-slate-700 rounded p-2 text-sm mt-1 mb-4">
-                    <button class="w-full bg-sky-500 text-black font-bold py-2 rounded hover:bg-sky-400 transition">Aplicar Filtros</button>
+                    <p class="text-xs text-slate-500 italic">Muestra el flujo general. Escribe una wallet para aislarla en el feed.</p>
                 </div>
                 <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
                     <h3 class="font-bold mb-4 border-l-4 border-rose-500 pl-2">Triggers de IA</h3>
@@ -41,13 +41,16 @@
             </aside>
 
             <main class="col-span-9 bg-slate-900/30 rounded-xl border border-slate-800 overflow-hidden">
-                <div class="p-4 bg-slate-900/80 font-bold border-b border-slate-800">Feed de Transacciones</div>
+                <div class="p-4 bg-slate-900/80 font-bold border-b border-slate-800 flex justify-between items-center">
+                    <span>Feed de Transacciones Globales</span>
+                    <span id="filterStatus" class="text-xs bg-sky-500/10 text-sky-400 px-2 py-1 rounded">Modo: Todo el Contrato</span>
+                </div>
                 <table class="w-full text-left text-sm">
                     <thead class="bg-black/50 text-slate-500">
                         <tr>
                             <th class="p-4">Bloque</th>
                             <th>Tipo</th>
-                            <th>Wallet</th>
+                            <th>De / Para</th>
                             <th>Cantidad</th>
                         </tr>
                     </thead>
@@ -59,25 +62,62 @@
     </div>
 
     <script>
-        // URL corregida y segura para conectar con Render sin interferencias
         const ws = new WebSocket(`wss://monitor-ok0d.onrender.com/ws`);
         const txBody = document.getElementById('txBody');
+        const walletFilter = document.getElementById('walletFilter');
+        const filterStatus = document.getElementById('filterStatus');
+
+        // Memoria local para mantener las últimas 100 transacciones globales del contrato
+        let globalTransactions = [];
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            const color = data.type === 'COMPRA' ? 'text-emerald-400' : (data.type === 'VENTA' ? 'text-rose-500' : 'text-slate-400');
             
-            const row = `
-                <tr class="tx-row animate-in fade-in duration-500">
-                    <td class="p-4 text-slate-500">#${data.block}</td>
-                    <td class="font-bold ${color}">${data.type}</td>
-                    <td class="font-mono text-sky-300 text-xs">${data.from.substring(0,10)}...</td>
-                    <td class="font-bold">${parseFloat(data.value).toLocaleString()} MUZZ</td>
-                </tr>
-            `;
-            txBody.insertAdjacentHTML('afterbegin', row);
-            if(txBody.children.length > 15) txBody.lastElementChild.remove();
+            // 1. El escaneo automático del contrato siempre guarda TODO
+            globalTransactions.unshift(data);
+            if(globalTransactions.length > 100) globalTransactions.pop(); 
+
+            // 2. Actualizar lo que el usuario ve en pantalla
+            renderFeed();
         };
+
+        function renderFeed() {
+            const filterValue = walletFilter.value.trim().toLowerCase();
+            txBody.innerHTML = ''; 
+
+            if (filterValue) {
+                filterStatus.textContent = "Modo: Filtrado por Wallet";
+                filterStatus.className = "text-xs bg-amber-500/10 text-amber-400 px-2 py-1 rounded";
+            } else {
+                filterStatus.textContent = "Modo: Todo el Contrato";
+                filterStatus.className = "text-xs bg-sky-500/10 text-sky-400 px-2 py-1 rounded";
+            }
+
+            // Filtrar sobre el flujo constante si hay algo escrito
+            const transactionsToShow = globalTransactions.filter(tx => {
+                if (!filterValue) return true; 
+                return tx.from.toLowerCase().includes(filterValue) || tx.to.toLowerCase().includes(filterValue);
+            });
+
+            // Dibujar las filas en la tabla
+            transactionsToShow.forEach(data => {
+                const color = data.type === 'COMPRA' ? 'text-emerald-400' : (data.type === 'VENTA' ? 'text-rose-500' : 'text-slate-400');
+                const walletDisplay = data.type === 'COMPRA' ? data.to : data.from;
+                
+                const row = `
+                    <tr class="tx-row">
+                        <td class="p-4 text-slate-500">#${data.block}</td>
+                        <td class="font-bold ${color}">${data.type}</td>
+                        <td class="font-mono text-sky-300 text-xs">${walletDisplay.substring(0,12)}...${walletDisplay.substring(walletDisplay.length - 4)}</td>
+                        <td class="font-bold">${parseFloat(data.value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} MUZZ</td>
+                    </tr>
+                `;
+                txBody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        // Escucha en tiempo real cuando escribes o borras en el buscador desde el teléfono
+        walletFilter.addEventListener('input', renderFeed);
     </script>
 </body>
 </html>
