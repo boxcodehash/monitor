@@ -62,14 +62,16 @@ async def startup_event():
 
 @app.get("/")
 async def get():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
+    return {"status": "MuzzStudio Backend Online"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     tracker.active_connections.append(websocket)
     try:
-        while True: await websocket.receive_text()
+        while True: 
+            # Mantiene viva la conexión escuchando pings del teléfono
+            await websocket.receive_text()
     except:
         tracker.active_connections.remove(websocket)
+# EL ARCHIVO DEBE TERMINAR AQUÍ. NO PONGAS NADA MÁS ABAJO.
