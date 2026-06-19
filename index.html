@@ -2,10 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>MuzzTracker Scan</title>
+    <title>MuzzStudio Tracker Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="./icon-512.png">
+    <link rel="apple-touch-icon" href="./icon-512.png">
     <meta name="theme-color" content="#0b0e14">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -38,7 +40,7 @@
         <header class="flex justify-between items-center border-b-2 border-slate-800 pb-6 mb-8">
             <div>
                 <div class="flex items-center gap-4">
-                    <h1 class="text-3xl font-bold text-sky-400">MuzzTracker Scan</h1>
+                    <h1 class="text-3xl font-bold text-sky-400">MuzzStudio Terminal v1.0</h1>
                     <button id="pwaInstallBtn" class="hidden bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs font-bold px-3 py-1.5 rounded border border-sky-500/30 transition flex items-center gap-1"></button>
                 </div>
                 <p class="text-slate-500 mt-1">Monitoreo On-Chain en Tiempo Real</p>
@@ -101,13 +103,11 @@
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
-        // Configurar comportamiento inicial del botón
         if (isIOS && !isStandalone) {
             pwaInstallBtn.innerHTML = "⚙️ Install via Menu";
             pwaInstallBtn.classList.remove('hidden');
         }
 
-        // Capturador del instalador automático en Android
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
@@ -117,14 +117,11 @@
             }
         });
 
-        // Evento al presionar el botón al lado del título
         pwaInstallBtn.addEventListener('click', async () => {
             if (isIOS) {
-                // Alternar el mensaje instructivo en iPhone
                 iosPrompt.classList.toggle('hidden');
                 return;
             }
-            // Ejecutar instalador en Android
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
@@ -134,7 +131,6 @@
             deferredPrompt = null;
         });
 
-        // Ocultar botón por completo si ya está instalada y abierta como App
         if (isStandalone) {
             pwaInstallBtn.classList.add('hidden');
         }
