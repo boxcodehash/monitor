@@ -1,6 +1,6 @@
 {
-  "name": "MuzzStudio Terminal",
-  "short_name": "MuzzTerminal",
+  "name": "MuzzTracker Scan",
+  "short_name": "MuzzScan",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0b0e14",
