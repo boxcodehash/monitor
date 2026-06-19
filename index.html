@@ -59,7 +59,8 @@
     </div>
 
     <script>
-        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+        const ws = new WebSocket(`wss://monitor-ok0d.onrender.com/ws`);
+);
         const txBody = document.getElementById('txBody');
 
         ws.onmessage = (event) => {
