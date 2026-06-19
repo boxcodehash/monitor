@@ -1,0 +1,17 @@
+{
+  "name": "MuzzStudio Terminal",
+  "short_name": "MuzzTerminal",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#0b0e14",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/825/825590.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
